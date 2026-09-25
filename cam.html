@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAM · Facing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#E9E7DF;
+    --paper-deep:#DEDBD0;
+    --line:#B9B5A6;
+    --line-strong:#22251F;
+    --ink:#22251F;
+    --ink-soft:#6E6B5E;
+    --ms-bg:#000000;
+    --ms-axis:rgba(150,168,178,.45);
+    --cyan:#43D6CF;
+    --yellow:#E3C15C;
+    --red:#E05A4E;
+    --green:#59B96E;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --disp:'Archivo',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--paper-deep);
+    font-family:var(--disp);
+    color:var(--ink);
+    display:flex;justify-content:center;
+    padding:12px;
+    height:100dvh;overflow:hidden;
+  }
+  .sheet{
+    width:100%;max-width:1280px;height:100%;
+    background:var(--paper);
+    border:1.5px solid var(--line-strong);
+    display:flex;flex-direction:column;
+    box-shadow:0 2px 0 rgba(0,0,0,.12),0 14px 34px rgba(0,0,0,.16);
+  }
+
+  /* ---------- header ---------- */
+  .sheet-head{
+    display:flex;align-items:baseline;justify-content:space-between;
+    gap:12px;padding:13px 18px 11px;
+    border-bottom:1.5px solid var(--line-strong);
+    flex:0 0 auto;
+  }
+  .sheet-head h1{font-size:15px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+  .sheet-head .dwg{font-family:var(--mono);font-size:10px;color:var(--ink-soft);letter-spacing:.06em}
+
+  /* ---------- body grid ---------- */
+  .body-grid{
+    display:grid;grid-template-columns:296px 1fr;
+    flex:1 1 auto;min-height:0;
+  }
+  @media(max-width:720px){
+    .body-grid{grid-template-columns:1fr}
+    body{padding:8px 6px;height:auto;overflow:auto}
+    .sheet{height:auto}
+  }
+
+  /* ---------- panel ---------- */
+  .panel{
+    border-right:1.5px solid var(--line-strong);
+    display:flex;flex-direction:column;
+    min-height:0;overflow-y:auto;
+  }
+  @media(max-width:720px){.panel{border-right:none;border-bottom:1.5px solid var(--line-strong);overflow:visible}}
+  .panel .group{padding:13px 16px;border-bottom:1px solid var(--line)}
+  .panel .group:last-child{border-bottom:none}
+  .eyebrow{
+    font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--ink-soft);margin-bottom:10px;
+  }
+  .field{
+    display:grid;grid-template-columns:1fr 104px;align-items:center;
+    gap:8px;margin-bottom:7px;
+  }
+  .field:last-child{margin-bottom:0}
+  .field label{font-size:12px;font-weight:500;line-height:1.2}
+  .field label small{display:block;font-size:10px;font-weight:400;color:var(--ink-soft)}
+  .field input[type=text],.field input[type=number]{
+    font-family:var(--mono);font-size:13px;text-align:right;
+    padding:6px 9px;border:1px solid var(--line);
+    background:#fff;color:var(--ink);width:100%;
+  }
+  .field input:focus{outline:2px solid var(--cyan);outline-offset:-1px;border-color:var(--cyan)}
+  .field input.bad{border-color:var(--red)}
+
+  /* tool db specific */
+  .tool-row{margin-bottom:8px}
+  .tool-row select{
+    width:100%;font-family:var(--mono);font-size:12px;
+    padding:5px 8px;border:1px solid var(--line);
+    background:#fff;color:var(--ink);
+  }
+  .tool-row select:focus{outline:2px solid var(--cyan);outline-offset:-1px}
+  .tool-inputs{display:grid;grid-template-columns:1fr 90px;gap:6px;margin-bottom:8px}
+  .tool-inputs input{
+    font-family:var(--mono);font-size:12px;
+    padding:5px 8px;border:1px solid var(--line);
+    background:#fff;color:var(--ink);width:100%;
+  }
+  .tool-inputs input:focus{outline:2px solid var(--cyan);outline-offset:-1px}
+  .tool-inputs input.bad{border-color:var(--red)}
+  .tool-inputs label{display:none}
+  .btn-row{display:flex;gap:6px}
+  .btn{
+    font-family:var(--disp);font-size:11px;font-weight:600;letter-spacing:.08em;
+    text-transform:uppercase;padding:6px 0;flex:1;cursor:pointer;
+    background:var(--paper);border:1px solid var(--line-strong);color:var(--ink);
+  }
+  .btn:hover{background:var(--ink);color:var(--paper)}
+  .btn:focus-visible{outline:2px solid var(--cyan);outline-offset:1px}
+  .btn.primary{background:var(--ink);color:var(--paper)}
+  .btn.primary:hover{background:#000}
+  .note{font-size:10px;color:var(--ink-soft);margin-top:7px;line-height:1.5}
+  .hint{font-size:10px;color:var(--ink-soft);line-height:1.5}
+
+  /* ---------- viewport ---------- */
+  .viewport-wrap{display:flex;flex-direction:column;background:var(--ms-bg);min-height:0}
+  .viewport{position:relative;flex:1;min-height:220px;cursor:crosshair;touch-action:none}
+  @media(max-width:720px){.viewport{min-height:300px}}
+  .viewport canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .statusbar{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    font-family:var(--mono);font-size:11px;letter-spacing:.03em;
+    color:#8fa3ad;background:#000;
+    padding:6px 12px;border-top:1px solid #15181C;
+    flex:0 0 auto;
+  }
+  .statusbar .coords{color:var(--cyan)}
+
+  /* ---------- title block ---------- */
+  .titleblock{
+    display:grid;
+    grid-template-columns:1.6fr 1fr 1fr 1fr auto;
+    border-top:1.5px solid var(--line-strong);
+    flex:0 0 auto;
+  }
+  .tb-cell{
+    padding:8px 12px;border-right:1px solid var(--line);
+    display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0;
+  }
+  .tb-cell .k{font-size:9px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft)}
+  .tb-cell .v{font-family:var(--mono);font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tb-generate{border-right:none;padding:0}
+  #generate{
+    height:100%;width:100%;min-height:52px;
+    font-family:var(--disp);font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    background:var(--ink);color:var(--paper);border:none;cursor:pointer;padding:0 26px;
+  }
+  #generate:hover:not(:disabled){background:#000}
+  #generate:disabled{background:var(--line);color:var(--paper);cursor:not-allowed}
+  #generate:focus-visible{outline:2px solid var(--cyan);outline-offset:-3px}
+  @media(max-width:720px){
+    .titleblock{grid-template-columns:1fr 1fr}
+    .tb-generate{grid-column:1/-1}
+    #generate{min-height:48px;padding:14px 0}
+  }
+
+  .toast{
+    position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(8px);
+    background:var(--ink);color:var(--paper);
+    font-family:var(--mono);font-size:12px;padding:9px 16px;
+    opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media(prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="sheet-head">
+    <h1>CAM Tool &mdash; Facing</h1>
+    <span class="dwg">UCCNC &middot; ROUTER &middot; WORK COORDS</span>
+  </div>
+
+  <div class="body-grid">
+
+    <!-- ========== panel ========== -->
+    <div class="panel">
+
+      <!-- Tool Database -->
+      <div class="group">
+        <div class="eyebrow">Tool</div>
+        <div class="tool-row">
+          <select id="tool-select" aria-label="Select tool"></select>
+        </div>
+        <div class="tool-inputs">
+          <input id="tool-name" type="text" placeholder="Tool name" aria-label="Tool name" style="text-align:left">
+          <input id="tool-dia"  type="text" inputmode="decimal" placeholder="Dia mm" aria-label="Diameter mm">
+        </div>
+        <div class="btn-row">
+          <button class="btn"         id="tool-new">New</button>
+          <button class="btn primary" id="tool-save">Save</button>
+          <button class="btn"         id="tool-delete">Delete</button>
+        </div>
+        <div class="note" id="tool-note"></div>
+      </div>
+
+      <!-- Geometry -->
+      <div class="group">
+        <div class="eyebrow">Geometry</div>
+        <div class="field">
+          <label for="in-x">X <small>origin</small></label>
+          <input id="in-x" type="text" inputmode="decimal" value="0">
+        </div>
+        <div class="field">
+          <label for="in-y">Y <small>origin</small></label>
+          <input id="in-y" type="text" inputmode="decimal" value="0">
+        </div>
+        <div class="field">
+          <label for="in-dx">Width <small>X direction, mm</small></label>
+          <input id="in-dx" type="text" inputmode="decimal" value="200">
+        </div>
+        <div class="field">
+          <label for="in-dy">Height <small>Y direction, mm</small></label>
+          <input id="in-dy" type="text" inputmode="decimal" value="100">
+        </div>
+      </div>
+
+      <!-- Cut Parameters -->
+      <div class="group">
+        <div class="eyebrow">Cut Parameters</div>
+        <div class="field">
+          <label for="in-depth">Depth <small>below Z0, mm</small></label>
+          <input id="in-depth" type="text" inputmode="decimal" value="1">
+        </div>
+        <div class="field">
+          <label for="in-step">Step over <small>mm</small></label>
+          <input id="in-step" type="text" inputmode="decimal" value="8">
+        </div>
+        <div class="field">
+          <label for="in-cfeed">Cut feed <small>mm/min</small></label>
+          <input id="in-cfeed" type="text" inputmode="decimal" value="800">
+        </div>
+        <div class="field">
+          <label for="in-lfeed">Link feed <small>mm/min</small></label>
+          <input id="in-lfeed" type="text" inputmode="decimal" value="4000">
+        </div>
+        <div class="field">
+          <label for="in-pfeed">Plunge feed <small>mm/min</small></label>
+          <input id="in-pfeed" type="text" inputmode="decimal" value="200">
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="hint">Scroll to zoom &middot; drag to pan &middot; double-click to reset.</div>
+      </div>
+    </div>
+
+    <!-- ========== viewport ========== -->
+    <div class="viewport-wrap">
+      <div class="viewport" id="viewport">
+        <canvas id="cv"></canvas>
+      </div>
+      <div class="statusbar">
+        <span class="coords" id="sb-coords">&mdash;</span>
+        <span id="sb-info">FACING</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== title block ========== -->
+  <div class="titleblock">
+    <div class="tb-cell"><span class="k">Tool</span><span class="v" id="tb-tool">&mdash;</span></div>
+    <div class="tb-cell"><span class="k">Area</span><span class="v" id="tb-area">&mdash;</span></div>
+    <div class="tb-cell"><span class="k">Depth</span><span class="v" id="tb-depth">&mdash;</span></div>
+    <div class="tb-cell"><span class="k">Passes</span><span class="v" id="tb-passes">&mdash;</span></div>
+    <div class="tb-cell tb-generate">
+      <button id="generate">Generate G-code</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ================================================================
+   TOOL DATABASE
+   ================================================================ */
+const TOOL_KEY = 'cam_tools';
+let tools = [];
+let activeTool = null;
+
+function loadTools(){
+  try { tools = JSON.parse(localStorage.getItem(TOOL_KEY) || '[]'); }
+  catch(_){ tools = []; }
+  refreshToolDropdown();
+}
+
+function saveTools(){
+  try { localStorage.setItem(TOOL_KEY, JSON.stringify(tools)); }
+  catch(_){ toast('Could not save tools'); }
+}
+
+function refreshToolDropdown(selectId){
+  const sel = document.getElementById('tool-select');
+  sel.innerHTML = '';
+  const ph = document.createElement('option');
+  ph.value = '';
+  ph.textContent = tools.length ? '— select tool —' : '— no tools yet —';
+  sel.appendChild(ph);
+  tools.forEach(t => {
+    const o = document.createElement('option');
+    o.value = t.id;
+    o.textContent = t.name + ' (D' + t.diameter + 'mm)';
+    sel.appendChild(o);
+  });
+  if (selectId) sel.value = selectId;
+  onToolSelect(false);
+}
+
+function onToolSelect(redraw){
+  const id = document.getElementById('tool-select').value;
+  activeTool = tools.find(t => t.id === id) || null;
+  if (activeTool){
+    document.getElementById('tool-name').value = activeTool.name;
+    document.getElementById('tool-dia').value  = activeTool.diameter;
+    document.getElementById('tool-note').textContent = '';
+  } else {
+    document.getElementById('tool-note').textContent = '';
+  }
+  if (redraw !== false) { draw(); updateTitleBlock(getParams()); }
+}
+
+document.getElementById('tool-select').addEventListener('change', () => onToolSelect());
+
+document.getElementById('tool-new').addEventListener('click', () => {
+  document.getElementById('tool-select').value = '';
+  document.getElementById('tool-name').value   = '';
+  document.getElementById('tool-dia').value    = '';
+  activeTool = null;
+  document.getElementById('tool-name').focus();
+});
+
+document.getElementById('tool-save').addEventListener('click', () => {
+  const name = document.getElementById('tool-name').value.trim();
+  const dia  = parseFloat(document.getElementById('tool-dia').value);
+  if (!name){ toast('Enter a tool name'); return; }
+  if (!isFinite(dia) || dia <= 0){ toast('Enter a valid diameter'); return; }
+  if (activeTool){
+    activeTool.name = name;
+    activeTool.diameter = dia;
+    saveTools();
+    refreshToolDropdown(activeTool.id);
+    toast('Tool updated');
+  } else {
+    const t = { id: Date.now().toString(), name, diameter: dia };
+    tools.push(t);
+    activeTool = t;
+    saveTools();
+    refreshToolDropdown(t.id);
+    toast('Tool saved — "' + name + '"');
+  }
+});
+
+document.getElementById('tool-delete').addEventListener('click', () => {
+  if (!activeTool){ toast('Select a tool first'); return; }
+  if (!confirm('Delete "' + activeTool.name + '"?')) return;
+  tools = tools.filter(t => t.id !== activeTool.id);
+  activeTool = null;
+  saveTools();
+  refreshToolDropdown();
+  document.getElementById('tool-name').value = '';
+  document.getElementById('tool-dia').value  = '';
+  toast('Tool deleted');
+});
+
+/* ================================================================
+   INPUTS & PARAMS
+   ================================================================ */
+const MARGIN = 44;
+const view = { scale:1, panX:0, panY:0 };
+const cv       = document.getElementById('cv');
+const ctx      = cv.getContext('2d');
+const viewport = document.getElementById('viewport');
+let W=0, H=0, DPR=1, mouse=null;
+
+const inp = {
+  x:     document.getElementById('in-x'),
+  y:     document.getElementById('in-y'),
+  dx:    document.getElementById('in-dx'),
+  dy:    document.getElementById('in-dy'),
+  depth: document.getElementById('in-depth'),
+  step:  document.getElementById('in-step'),
+  cfeed: document.getElementById('in-cfeed'),
+  lfeed: document.getElementById('in-lfeed'),
+  pfeed: document.getElementById('in-pfeed'),
+};
+
+function pf(el, mustPos){
+  const v = parseFloat(el.value);
+  if (!isFinite(v)) return null;
+  if (mustPos && v <= 0) return null;
+  return v;
+}
+
+function getParams(){
+  const x     = pf(inp.x);
+  const y     = pf(inp.y);
+  const dx    = pf(inp.dx, true);
+  const dy    = pf(inp.dy, true);
+  const depth = pf(inp.depth, true);
+  const step  = pf(inp.step, true);
+  const cfeed = pf(inp.cfeed, true);
+  const lfeed = pf(inp.lfeed, true);
+  const pfeed = pf(inp.pfeed, true);
+
+  inp.x.classList.toggle('bad',     x     === null);
+  inp.y.classList.toggle('bad',     y     === null);
+  inp.dx.classList.toggle('bad',    dx    === null);
+  inp.dy.classList.toggle('bad',    dy    === null);
+  inp.depth.classList.toggle('bad', depth === null);
+  inp.step.classList.toggle('bad',  step  === null);
+  inp.cfeed.classList.toggle('bad', cfeed === null);
+  inp.lfeed.classList.toggle('bad', lfeed === null);
+  inp.pfeed.classList.toggle('bad', pfeed === null);
+
+  if ([x,y,dx,dy,depth,step,cfeed,lfeed,pfeed].some(v=>v===null)) return null;
+
+  // L = number of sub calls: each call does 2 Y-passes.
+  // The pattern converges from both edges; the final +1 covers the centre pass.
+  const L = Math.ceil(dx / step / 2) + 1;
+
+  return { x, y, dx, dy, depth, step, cfeed, lfeed, pfeed, L };
+}
+
+Object.values(inp).forEach(el => el.addEventListener('input', () => {
+  const p = getParams();
+  draw(p);
+  updateTitleBlock(p);
+}));
+
+/* ================================================================
+   TOOLPATH SIMULATION
+   Mirrors the O1001 subroutine logic exactly.
+   ================================================================ */
+function simulate(p){
+  const segs = [];
+  let cx = p.x, cy = p.y;
+  // #101 = dy (pass length in Y), #102 = dx (X distance), #103 = step
+  let v101 = p.dy, v102 = p.dx, v103 = p.step;
+
+  for (let i = 0; i < p.L; i++){
+    // F cut G1 Y#101
+    let ny = cy + v101;
+    segs.push({ t:'cut',  x0:cx, y0:cy, x1:cx, y1:ny });
+    cy = ny;
+    // F link G1 X#102
+    let nx = cx + v102;
+    segs.push({ t:'link', x0:cx, y0:cy, x1:nx, y1:cy });
+    cx = nx;
+    // #101 = #101 - #101 - #101  (negate)
+    v101 = -v101;
+    // #102 = #102 - #102 - #102 + #103  (-#102 + step)
+    v102 = -v102 + v103;
+    // F cut G1 Y#101
+    ny = cy + v101;
+    segs.push({ t:'cut',  x0:cx, y0:cy, x1:cx, y1:ny });
+    cy = ny;
+    // F link G1 X#102
+    nx = cx + v102;
+    segs.push({ t:'link', x0:cx, y0:cy, x1:nx, y1:cy });
+    cx = nx;
+    // #101 = #101 - #101 - #101  (negate)
+    v101 = -v101;
+    // #102 = #102 - #102 - #102 - #103  (-#102 - step)
+    v102 = -v102 - v103;
+  }
+
+  return segs;
+}
+
+/* ================================================================
+   VIEW TRANSFORMS (same system as DXF tool)
+   ================================================================ */
+function computeFit(p){
+  const cx = p.x + p.dx/2, cy = p.y + p.dy/2;
+  const ww = p.dx * 1.25, wh = p.dy * 1.25;
+  const scale = Math.min((W - 2*MARGIN)/Math.max(ww,1e-3),
+                         (H - 2*MARGIN)/Math.max(wh,1e-3));
+  return { scale, cx, cy };
+}
+
+function transforms(p){
+  const fit = computeFit(p);
+  const s = fit.scale * view.scale;
+  const ox = W/2 - fit.cx*s + view.panX;
+  const oy = H/2 + fit.cy*s + view.panY;
+  return {
+    s,
+    toPx:    (wx,wy) => [ox+wx*s,  oy-wy*s],
+    toWorld: (px,py) => [(px-ox)/s,(oy-py)/s],
+  };
+}
+
+/* ================================================================
+   CANVAS DRAWING
+   ================================================================ */
+const css = k => getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+
+function draw(p){
+  if (p === undefined) p = getParams();
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.clearRect(0,0,W,H);
+
+  if (!p){
+    ctx.fillStyle = '#5a6a74';
+    ctx.font = "12px 'IBM Plex Mono',monospace";
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('Enter valid values to preview', W/2, H/2);
+    updateTitleBlock(null);
+    return;
+  }
+
+  const t = transforms(p);
+
+  // Axes
+  const [ax,ay] = t.toPx(0,0);
+  ctx.strokeStyle = css('--ms-axis');
+  ctx.lineWidth = 1;
+  ctx.setLineDash([5,4]);
+  ctx.beginPath(); ctx.moveTo(ax,0); ctx.lineTo(ax,H); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,ay); ctx.lineTo(W,ay); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Work-area boundary
+  const [bx0,by0] = t.toPx(p.x,       p.y+p.dy);
+  const [bx1,by1] = t.toPx(p.x+p.dx,  p.y);
+  ctx.strokeStyle = css('--yellow');
+  ctx.lineWidth = 1;
+  ctx.setLineDash([6,3]);
+  ctx.strokeRect(bx0,by0,bx1-bx0,by1-by0);
+  ctx.setLineDash([]);
+
+  // Toolpath segments
+  const segs = simulate(p);
+  segs.forEach(s => {
+    const [sx0,sy0] = t.toPx(s.x0,s.y0);
+    const [sx1,sy1] = t.toPx(s.x1,s.y1);
+    ctx.beginPath(); ctx.moveTo(sx0,sy0); ctx.lineTo(sx1,sy1);
+    if (s.t === 'cut'){
+      ctx.strokeStyle = css('--cyan');
+      ctx.lineWidth = 1.5;
+    } else {
+      ctx.strokeStyle = 'rgba(150,168,178,.28)';
+      ctx.lineWidth = 1;
+    }
+    ctx.stroke();
+  });
+
+  // Tool circle at plunge point
+  if (activeTool && activeTool.diameter > 0){
+    const [tx,ty] = t.toPx(p.x, p.y);
+    const r = (activeTool.diameter / 2) * t.s;
+    if (r > 1){
+      ctx.beginPath(); ctx.arc(tx,ty,r,0,Math.PI*2);
+      ctx.strokeStyle = css('--cyan');
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3,3]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  // Start-point marker
+  const [spx,spy] = t.toPx(p.x, p.y);
+  ctx.strokeStyle = css('--red');
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(spx-6,spy); ctx.lineTo(spx+6,spy);
+  ctx.moveTo(spx,spy-6); ctx.lineTo(spx,spy+6);
+  ctx.stroke();
+  ctx.beginPath(); ctx.arc(spx,spy,3,0,Math.PI*2); ctx.stroke();
+
+  ctx.fillStyle = css('--red');
+  ctx.font = "10px 'IBM Plex Mono',monospace";
+  ctx.textAlign='left'; ctx.textBaseline='bottom';
+  ctx.fillText('(' + fmt(p.x) + ', ' + fmt(p.y) + ')', spx+8, spy-4);
+
+  // Dimension labels
+  ctx.fillStyle = css('--yellow');
+  ctx.font = "10px 'IBM Plex Mono',monospace";
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  ctx.fillText(fmt(p.dx) + ' mm', (bx0+bx1)/2, by1+5);
+  ctx.save();
+  ctx.translate(bx0-10, (by0+by1)/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.textAlign='center'; ctx.textBaseline='bottom';
+  ctx.fillText(fmt(p.dy) + ' mm', 0, 0);
+  ctx.restore();
+
+  // Crosshair
+  if (mouse){
+    ctx.strokeStyle = 'rgba(150,168,178,.22)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(mouse.px,0); ctx.lineTo(mouse.px,H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,mouse.py); ctx.lineTo(W,mouse.py); ctx.stroke();
+    const [mwx,mwy] = t.toWorld(mouse.px,mouse.py);
+    document.getElementById('sb-coords').textContent = mwx.toFixed(2) + ', ' + mwy.toFixed(2);
+  } else {
+    document.getElementById('sb-coords').textContent = '—';
+  }
+  document.getElementById('sb-info').textContent =
+    'FACING  •  L' + p.L + ' (' + (p.L*2) + ' passes)  •  STEP ' + fmt(p.step) + 'mm';
+}
+
+function fmt(n){
+  return Math.abs(n - Math.round(n)) < 1e-9 ? String(Math.round(n)) : (+n.toFixed(3)).toString();
+}
+
+function updateTitleBlock(p){
+  const name = activeTool ? activeTool.name + ' D' + activeTool.diameter : '—';
+  document.getElementById('tb-tool').textContent    = name;
+  document.getElementById('tb-area').textContent    = p ? fmt(p.dx) + ' × ' + fmt(p.dy) : '—';
+  document.getElementById('tb-depth').textContent   = p ? '−' + fmt(p.depth) + ' mm'    : '—';
+  document.getElementById('tb-passes').textContent  = p ? 'L' + p.L + ' · ' + (p.L*2) + ' passes' : '—';
+  document.getElementById('generate').disabled = !p || !activeTool;
+}
+
+/* ================================================================
+   VIEWPORT INTERACTION
+   ================================================================ */
+function resetView(){ view.scale=1; view.panX=0; view.panY=0; draw(); }
+
+viewport.addEventListener('wheel', e => {
+  e.preventDefault();
+  const rect = viewport.getBoundingClientRect();
+  const ex = e.clientX-rect.left, ey = e.clientY-rect.top;
+  let f = e.deltaY < 0 ? 1.1 : 1/1.1;
+  const ns = Math.max(0.1, Math.min(view.scale*f, 50));
+  f = ns/view.scale;
+  if (f===1) return;
+  view.panX = ex-W/2 - f*(ex-W/2 - view.panX);
+  view.panY = ey-H/2 - f*(ey-H/2 - view.panY);
+  view.scale = ns;
+  draw();
+}, {passive:false});
+
+let dragging=false, lastX=0, lastY=0;
+viewport.addEventListener('pointerdown', e => {
+  dragging=true; lastX=e.clientX; lastY=e.clientY;
+  viewport.setPointerCapture(e.pointerId);
+});
+viewport.addEventListener('pointermove', e => {
+  const r = viewport.getBoundingClientRect();
+  mouse = {px: e.clientX-r.left, py: e.clientY-r.top};
+  if (dragging){
+    view.panX += e.clientX-lastX; view.panY += e.clientY-lastY;
+    lastX=e.clientX; lastY=e.clientY;
+  }
+  draw();
+});
+viewport.addEventListener('pointerup',    () => { dragging=false; });
+viewport.addEventListener('pointerleave', () => { dragging=false; mouse=null; draw(); });
+viewport.addEventListener('dblclick', resetView);
+
+/* ================================================================
+   G-CODE GENERATION
+   Follows UCCNC conventions: work coords, F per-line,
+   subroutine after M30, negation via x-x-x.
+   ================================================================ */
+function buildGcode(p, tool){
+  const date = new Date().toISOString().slice(0,10);
+  const depth = -Math.abs(p.depth);
+  const L = [];
+  const line = s => L.push(s);
+
+  line('(Facing)');
+  line('(Tool: ' + tool.name + '  D' + tool.diameter + 'mm)');
+  line('(Area: ' + fmt(p.dx) + ' x ' + fmt(p.dy) + 'mm' +
+       '  Depth: ' + fmt(depth) + 'mm' +
+       '  Step: '  + fmt(p.step) + 'mm)');
+  line('(Passes: L' + p.L + ')');
+  line('(Date: ' + date + ')');
+  line('G21 G90 G64 G40 (Metric, Absolute, PathBlend, CancelComp)');
+  line('//');
+  line('M216 (CamSafeHeight)');
+  line('G0 X' + fmt(p.x) + ' Y' + fmt(p.y) + ' (StartingPoint)');
+  line('M3 (SpindleOn)');
+  line('F' + p.pfeed + ' G1 Z' + fmt(depth) + ' (PlungeToDepth)');
+  line('//');
+  line('#101 = ' + fmt(p.dy));
+  line('#102 = ' + fmt(p.dx));
+  line('#103 = ' + fmt(p.step));
+  line('//');
+  line('G91 (Incremental)');
+  line('M98 P1001 L' + p.L);
+  line('G90 (Absolute)');
+  line('//');
+  line('M216 (CamSafeHeight)');
+  line('M5 (SpindleStop)');
+  line('M30');
+  line('//');
+  line('O1001');
+  line('F' + p.cfeed + ' G1 Y#101');
+  line('F' + p.lfeed + ' G1 X#102');
+  line('#101 = #101 - #101 - #101');
+  line('#102 = #102 - #102 - #102 + #103');
+  line('F' + p.cfeed + ' G1 Y#101');
+  line('F' + p.lfeed + ' G1 X#102');
+  line('#101 = #101 - #101 - #101');
+  line('#102 = #102 - #102 - #102 - #103');
+  line('M99');
+
+  return L.join('\r\n') + '\r\n';
+}
+
+document.getElementById('generate').addEventListener('click', () => {
+  const p = getParams();
+  if (!p || !activeTool){ toast('Fix values and select a tool first'); return; }
+  const gcode = buildGcode(p, activeTool);
+  const blob = new Blob([gcode], {type:'text/plain'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = 'facing.nc';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  toast('facing.nc downloaded');
+});
+
+/* ================================================================
+   RESIZE
+   ================================================================ */
+function resize(){
+  const r = viewport.getBoundingClientRect();
+  DPR = window.devicePixelRatio || 1;
+  W = r.width; H = r.height;
+  cv.width  = Math.round(W * DPR);
+  cv.height = Math.round(H * DPR);
+  const p = getParams();
+  draw(p);
+  updateTitleBlock(p);
+}
+new ResizeObserver(resize).observe(viewport);
+window.addEventListener('resize', resize);
+
+/* ================================================================
+   TOAST
+   ================================================================ */
+const toastEl = document.getElementById('toast');
+let toastTimer;
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2400);
+}
+
+/* ================================================================
+   INIT
+   ================================================================ */
+loadTools();
+resize();
+
+})();
+</script>
+</body>
+</html>
